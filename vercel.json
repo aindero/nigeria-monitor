@@ -1,7 +1,14 @@
 {
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+  "buildCommand": null,
+  "outputDirectory": "public",
+  "functions": {
+    "server.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "routes": [
+    { "src": "/api/forex", "dest": "/server.js" },
+    { "src": "/api/news", "dest": "/server.js" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
