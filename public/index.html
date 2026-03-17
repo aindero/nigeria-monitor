@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NigeriaMonitor — Real-Time Intelligence Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ng-green:#008751; --ng-green-dim:#005c37; --ng-green-bright:#00b368; --ng-green-glow:rgba(0,179,104,0.15);
+  --ng-gold:#c8932a; --ng-gold-bright:#f0b429;
+  --bg0:#060a07; --bg1:#0b1209; --bg2:#101a10; --bg3:#162019;
+  --border:rgba(0,135,81,0.18); --border2:rgba(0,135,81,0.38); --border3:rgba(0,135,81,0.6);
+  --t1:#dff0e6; --t2:#7aab8e; --t3:#4a7060; --t4:#2a4035;
+  --red:#e84040; --amber:#f0b429; --blue:#4a9eff; --orange:#ff6b35;
+  --font:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace; --display:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg0);color:var(--t1);font-family:var(--font);font-size:13px;}
+
+/* Scanlines */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,135,81,0.012) 3px,rgba(0,135,81,0.012) 4px);pointer-events:none;z-index:9998;}
+
+/* ── HEADER ── */
+.hdr{height:50px;background:var(--bg1);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 18px;gap:14px;position:sticky;top:0;z-index:200;}
+.logo{font-family:var(--display);font-size:17px;font-weight:800;letter-spacing:0.05em;display:flex;align-items:center;gap:10px;}
+.flag{width:26px;height:18px;display:flex;border-radius:2px;overflow:hidden;flex-shrink:0;}
+.flag b{flex:1;display:block;}
+.flag b:nth-child(1){background:var(--ng-green);}
+.flag b:nth-child(2){background:#fff;}
+.flag b:nth-child(3){background:var(--ng-green);}
+.logo-em{color:var(--ng-green-bright);}
+.hdiv{width:1px;height:22px;background:var(--border);}
+.live{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--ng-green-bright);font-family:var(--mono);}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--ng-green-bright);animation:blink 1.8s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,179,104,0.6);}50%{opacity:.4;box-shadow:0 0 0 4px rgba(0,179,104,0);}}
+.nav{display:flex;gap:2px;margin-left:8px;}
+.navbtn{background:none;border:1px solid transparent;color:var(--t3);padding:4px 12px;border-radius:4px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .18s;letter-spacing:.03em;text-decoration:none;display:flex;align-items:center;}
+.navbtn:hover{color:var(--t2);border-color:var(--border);}
+.navbtn.active{color:var(--ng-green-bright);border-color:var(--ng-green-bright);background:rgba(0,179,104,0.08);}
+.htime{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--t3);}
+.halert{font-size:10px;font-family:var(--mono);color:var(--red);background:rgba(232,64,64,0.1);border:1px solid rgba(232,64,64,0.3);padding:3px 9px;border-radius:3px;letter-spacing:.06em;}
+
+/* ── TICKER ── */
+.ticker{height:28px;background:rgba(0,135,81,0.06);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0;overflow:hidden;}
+.tlabel{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--ng-gold-bright);font-family:var(--mono);padding:0 14px;background:rgba(200,147,42,0.12);border-right:1px solid var(--border);height:100%;display:flex;align-items:center;flex-shrink:0;}
+.tscroll{display:flex;gap:32px;white-space:nowrap;animation:scroll 60s linear infinite;padding:0 20px;}
+.tscroll:hover{animation-play-state:paused;}
+@keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.ti{font-size:11px;color:var(--t2);font-family:var(--mono);flex-shrink:0;}
+.ti .sep{color:var(--ng-gold);margin:0 6px;}
+.tup{color:var(--ng-green-bright);}
+.tdn{color:var(--red);}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:220px 1fr 268px;height:calc(100vh - 78px);overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sb{background:var(--bg1);border-right:1px solid var(--border);overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:6px;}
+.sb::-webkit-scrollbar{width:3px;}
+.sb::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.stitle{font-size:9px;font-weight:600;letter-spacing:.16em;color:var(--t4);font-family:var(--mono);padding:8px 6px 4px;text-transform:uppercase;}
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:9px 10px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.scard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--ac,var(--ng-green));}
+.scard:hover{border-color:var(--border2);background:var(--bg3);}
+.sc-lbl{font-size:9px;color:var(--t3);font-family:var(--mono);letter-spacing:.06em;margin-bottom:3px;}
+.sc-val{font-size:17px;font-weight:600;color:var(--t1);font-family:var(--mono);line-height:1.1;}
+.sc-sub{font-size:10px;color:var(--t2);margin-top:2px;}
+.chg-up{color:var(--ng-green-bright);font-weight:600;}
+.chg-dn{color:var(--red);font-weight:600;}
+.chg-nt{color:var(--t2);}
+
+/* ── CENTER ── */
+.ctr{overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.ctr::-webkit-scrollbar{width:3px;}
+.ctr::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── PANELS ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.ph{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.2);}
+.ptitle{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--t2);font-family:var(--mono);text-transform:uppercase;}
+.pbadge{font-size:9px;padding:2px 7px;border-radius:3px;font-family:var(--mono);font-weight:600;letter-spacing:.07em;}
+.bg{background:rgba(0,179,104,0.13);color:var(--ng-green-bright);}
+.br{background:rgba(232,64,64,0.13);color:var(--red);}
+.ba{background:rgba(240,180,41,0.13);color:var(--amber);}
+.bb{background:rgba(74,158,255,0.13);color:var(--blue);}
+.pb{padding:10px 14px;}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* ── MAP ── */
+.mapwrap{height:260px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+#mapCanvas{width:100%;height:100%;display:block;}
+.mapo{position:absolute;inset:0;pointer-events:none;padding:10px;}
+.mapo-title{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--t1);font-family:var(--mono);background:rgba(6,10,7,0.82);padding:4px 10px;border-radius:4px;border:1px solid var(--border);display:inline-block;}
+.mapo-legend{position:absolute;top:10px;right:10px;background:rgba(6,10,7,0.82);border:1px solid var(--border);border-radius:4px;padding:6px 10px;display:flex;flex-direction:column;gap:4px;}
+.li{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--t2);font-family:var(--mono);}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ── MARKET ROWS ── */
+.mrow{display:flex;align-items:center;gap:0;padding:5px 6px;border-radius:4px;cursor:pointer;transition:background .15s;}
+.mrow:hover{background:rgba(0,135,81,0.07);}
+.mtk{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t1);width:76px;flex-shrink:0;}
+.mnm{font-size:10px;color:var(--t3);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;}
+.msp{width:48px;height:22px;flex-shrink:0;}
+.mpr{font-family:var(--mono);font-size:11px;font-weight:500;width:76px;text-align:right;flex-shrink:0;}
+.mch{font-family:var(--mono);font-size:10px;font-weight:600;width:52px;text-align:right;flex-shrink:0;}
+
+/* ── NEWS ── */
+.nitem{padding:8px 0;border-bottom:1px solid rgba(0,135,81,0.07);cursor:pointer;}
+.nitem:last-child{border-bottom:none;}
+.nitem:hover .nhl{color:var(--ng-green-bright);}
+.nmeta{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
+.ncat{font-size:9px;font-weight:600;letter-spacing:.09em;padding:2px 6px;border-radius:3px;font-family:var(--mono);}
+.ntime{font-size:9px;color:var(--t4);font-family:var(--mono);}
+.nhl{font-size:12px;font-weight:500;color:var(--t1);line-height:1.5;transition:color .2s;}
+.nsrc{font-size:9px;color:var(--t4);margin-top:2px;font-family:var(--mono);}
+
+/* ── FOREX ── */
+.frow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,135,81,0.06);}
+.frow:last-child{border-bottom:none;}
+.fpair{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t1);}
+.frate{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ng-gold-bright);}
+.fchg{font-family:var(--mono);font-size:10px;}
+
+/* ── BARS ── */
+.bars{display:flex;align-items:flex-end;gap:3px;height:72px;}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end;}
+.bfill{width:100%;border-radius:2px 2px 0 0;min-height:2px;}
+.blbl{font-size:8px;color:var(--t3);font-family:var(--mono);}
+
+/* ── SECURITY ZONES ── */
+.szrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.szn{font-size:11px;color:var(--t1);width:100px;flex-shrink:0;}
+.szbg{flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+.szfill{height:100%;border-radius:3px;}
+.szlvl{font-size:9px;font-family:var(--mono);font-weight:600;width:60px;text-align:right;flex-shrink:0;}
+
+/* ── AI BRIEF ── */
+.aibox{background:rgba(0,135,81,0.05);border:1px solid rgba(0,135,81,0.2);border-radius:6px;padding:12px;}
+.aihdr{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.aiicon{width:21px;height:21px;background:var(--ng-green);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:var(--mono);flex-shrink:0;}
+.aititle{font-size:10px;font-weight:600;color:var(--ng-green-bright);font-family:var(--mono);letter-spacing:.07em;}
+.aibody{font-size:11px;color:var(--t2);line-height:1.68;}
+.aibody strong{color:var(--t1);font-weight:500;}
+.airefresh{margin-top:9px;background:none;border:1px solid var(--border2);color:var(--ng-green-bright);padding:4px 10px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.09em;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.airefresh:hover{background:rgba(0,179,104,0.1);}
+.airefresh.ld{opacity:.6;cursor:not-allowed;}
+
+/* ── GEO INDEX ── */
+.girow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.gilab{font-size:10px;color:var(--t2);width:112px;flex-shrink:0;}
+.gibg{flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
+.gifill{height:100%;border-radius:2px;}
+.gival{font-size:10px;font-family:var(--mono);font-weight:600;width:24px;text-align:right;flex-shrink:0;}
+
+/* ── RIGHT PANEL ── */
+.rp{background:var(--bg1);border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;}
+.rp::-webkit-scrollbar{width:3px;}
+.rp::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.rs{padding:12px 14px;border-bottom:1px solid var(--border);}
+.rst{font-size:9px;font-weight:600;letter-spacing:.15em;color:var(--t4);font-family:var(--mono);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.rst::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── POP COUNTER ── */
+.popctr{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--ng-green-bright);letter-spacing:.03em;}
+.popsub{font-size:10px;color:var(--t3);margin-top:3px;}
+.popgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;}
+.popcard{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:8px;}
+.pclbl{font-size:9px;color:var(--t4);font-family:var(--mono);margin-bottom:2px;}
+.pcval{font-family:var(--mono);font-size:14px;font-weight:600;}
+
+/* ── CONFLICT GRID ── */
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.cstate{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:6px 7px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s;}
+.cstate:hover{border-color:var(--border2);}
+.cdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.csn{font-size:10px;font-weight:500;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── QUICK LINKS ── */
+.qlink{color:var(--t2);font-size:11px;text-decoration:none;padding:5px 10px;border:1px solid var(--border);border-radius:4px;font-family:var(--mono);transition:all .15s;display:block;margin-bottom:4px;}
+.qlink:hover{border-color:var(--border2);color:var(--ng-green-bright);}
+
+/* ── SKELETON ── */
+.sk{background:linear-gradient(90deg,var(--bg2) 25%,rgba(0,135,81,0.05) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ── FADE IN ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.panel,.mapwrap,.scard{animation:fadeUp .35s ease backwards;}
+
+/* ── PAGE VIEWS ── */
+.page{display:none;}
+.page.active{display:block;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo">
+    <div class="flag"><b></b><b></b><b></b></div>
+    NIGERIA<span class="logo-em">MONITOR</span>
+  </div>
+  <div class="hdiv"></div>
+  <div class="live"><span class="ldot"></span>LIVE</div>
+  <div class="hdiv"></div>
+  <nav class="nav">
+    <a class="navbtn active" onclick="showPage('overview',this)">Overview</a>
+    <a class="navbtn" onclick="showPage('markets',this)">Markets</a>
+    <a class="navbtn" onclick="showPage('security',this)">Security</a>
+    <a class="navbtn" onclick="showPage('economy',this)">Economy</a>
+    <a class="navbtn" onclick="showPage('news',this)">News</a>
+  </nav>
+  <div class="hdiv"></div>
+  <span class="halert" id="alertBadge">⚠ 14 ACTIVE ALERTS</span>
+  <div class="htime" id="htime">--:--:-- WAT</div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="tlabel">LIVE</div>
+  <div style="overflow:hidden;flex:1;display:flex;align-items:center;">
+    <div class="tscroll" id="tscroll"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE: OVERVIEW ═══════════════════════════════ -->
+<div id="page-overview" class="page active">
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sb">
+    <div class="stitle">Key Indicators</div>
+    <div class="scard" style="--ac:var(--ng-green-bright)">
+      <div class="sc-lbl">NGX ALL-SHARE INDEX</div>
+      <div class="sc-val">97,842</div>
+      <div class="sc-sub"><span class="chg-up">▲ +0.84%</span> · Today</div>
+    </div>
+    <div class="scard" style="--ac:var(--amber)">
+      <div class="sc-lbl">USD / NGN (NAFEM)</div>
+      <div class="sc-val">1,621</div>
+      <div class="sc-sub"><span class="chg-dn">▼ −0.31%</span> · Official rate</div>
+    </div>
+    <div class="scard" style="--ac:var(--red)">
+      <div class="sc-lbl">HEADLINE INFLATION</div>
+      <div class="sc-val">26.9%</div>
+      <div class="sc-sub"><span class="chg-dn">▼ −0.4pp</span> · Feb 2025</div>
+    </div>
+    <div class="scard" style="--ac:var(--blue)">
+      <div class="sc-lbl">BONNY LIGHT CRUDE</div>
+      <div class="sc-val">$76.40</div>
+      <div class="sc-sub"><span class="chg-up">▲ +1.22%</span> · USD/bbl</div>
+    </div>
+    <div class="scard" style="--ac:var(--ng-gold-bright)">
+      <div class="sc-lbl">CBN POLICY RATE (MPR)</div>
+      <div class="sc-val">27.5%</div>
+      <div class="sc-sub"><span class="chg-nt">→ Unchanged</span> · MPC Mar 2025</div>
+    </div>
+    <div class="scard" style="--ac:var(--ng-green)">
+      <div class="sc-lbl">POPULATION ESTIMATE</div>
+      <div class="sc-val" id="sb-pop">.2M</div>
+      <div class="sc-sub"><span class="chg-up">▲ +2.4%</span> · 2025 est.</div>
+    </div>
+    <div class="stitle">Security</div>
+    <div class="scard" style="--ac:var(--red)">
+      <div class="sc-lbl">ACTIVE CONFLICTS</div>
+      <div class="sc-val">14</div>
+      <div class="sc-sub">7 states · <span style="color:var(--red)">HIGH RISK</span></div>
+    </div>
+    <div class="scard" style="--ac:var(--orange)">
+      <div class="sc-lbl">KIDNAP INCIDENTS (7D)</div>
+      <div class="sc-val">8</div>
+      <div class="sc-sub">Northwest focus</div>
+    </div>
+    <div class="stitle">Energy</div>
+    <div class="scard" style="--ac:var(--blue)">
+      <div class="sc-lbl">OIL OUTPUT</div>
+      <div class="sc-val">1.52M</div>
+      <div class="sc-sub"><span class="chg-up">▲ +3.4%</span> · bpd, NNPC</div>
+    </div>
+    <div class="scard" style="--ac:var(--amber)">
+      <div class="sc-lbl">POWER GENERATION</div>
+      <div class="sc-val">4,210</div>
+      <div class="sc-sub">MW · National grid</div>
+    </div>
+    <div class="scard" style="--ac:var(--ng-green-bright)">
+      <div class="sc-lbl">DANGOTE REFINERY</div>
+      <div class="sc-val">70%</div>
+      <div class="sc-sub">Capacity utilisation</div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="ctr">
+    <!-- Map -->
+    <div class="mapwrap">
+      <canvas id="mapCanvas"></canvas>
+      <div class="mapo">
+        <span class="mapo-title">NIGERIA — GEOPOLITICAL OVERVIEW</span>
+      </div>
+      <div class="mapo-legend">
+        <div class="li"><span class="ld" style="background:var(--red)"></span>Conflict Zone</div>
+        <div class="li"><span class="ld" style="background:var(--orange)"></span>Elevated Risk</div>
+        <div class="li"><span class="ld" style="background:var(--ng-green)"></span>Stable</div>
+        <div class="li"><span class="ld" style="background:var(--blue)"></span>Oil/Gas</div>
+        <div class="li"><span class="ld" style="background:var(--amber)"></span>Capital / Hub</div>
+      </div>
+    </div>
+
+    <div class="pgrid">
+      <!-- NGX Markets -->
+      <div class="panel" style="animation-delay:.08s">
+        <div class="ph"><span class="ptitle">NGX Equities — Top Movers</span><span class="pbadge bg">OPEN</span></div>
+        <div class="pb" id="mktRows" style="padding:6px 10px"></div>
+      </div>
+
+      <!-- News -->
+      <div class="panel" style="animation-delay:.14s">
+        <div class="ph"><span class="ptitle">Latest News</span><span class="pbadge bb" id="newsCount">18 stories</span></div>
+        <div class="pb" id="newsFeed"></div>
+      </div>
+
+      <!-- Forex -->
+      <div class="panel" style="animation-delay:.2s">
+        <div class="ph"><span class="ptitle">Forex & Commodities</span><span class="pbadge ba">LIVE</span></div>
+        <div class="pb">
+          <div id="forexRows"></div>
+          <div style="margin-top:11px;">
+            <div style="font-size:9px;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);margin-bottom:7px;">INFLATION TREND (%)</div>
+            <div class="bars" id="infBars"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conflict States -->
+      <div class="panel" style="animation-delay:.26s">
+        <div class="ph"><span class="ptitle">State Security Index</span><span class="pbadge br">14 INCIDENTS</span></div>
+        <div class="pb">
+          <div class="cgrid" id="conflictGrid"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="rp">
+    <div class="rs">
+      <div class="rst">AI Intel Brief</div>
+      <div class="aibox">
+        <div class="aihdr">
+          <div class="aiicon">AI</div>
+          <span class="aititle">INTEL SYNTHESIS</span>
+        </div>
+        <div class="aibody" id="aiBriefText">Initialising intelligence brief...</div>
+        <button class="airefresh" id="aiBtn" onclick="fetchBrief()">
+          <span id="btnIco">↻</span> REFRESH BRIEF
+        </button>
+      </div>
+    </div>
+
+    <div class="rs">
+      <div class="rst">Security Zones</div>
+      <div id="secZones"></div>
+    </div>
+
+    <div class="rs">
+      <div class="rst">Population Clock</div>
+      <div class="popctr" id="bigPop">,184,022</div>
+      <div class="popsub">Estimated live · +6.8 births/min</div>
+      <div class="popgrid">
+        <div class="popcard">
+          <div class="pclbl">BIRTHS TODAY</div>
+          <div class="pcval" style="color:var(--ng-green-bright)" id="birthsTd">0</div>
+        </div>
+        <div class="popcard">
+          <div class="pclbl">DEATHS TODAY</div>
+          <div class="pcval" style="color:var(--red)" id="deathsTd">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rs">
+      <div class="rst">Governance Index</div>
+      <div id="geoIdx"></div>
+    </div>
+
+    <div class="rs">
+      <div class="rst">Official Sources</div>
+      <a class="qlink" href="https://www.cbn.gov.ng" target="_blank">↗ Central Bank of Nigeria</a>
+      <a class="qlink" href="https://www.ngxgroup.com" target="_blank">↗ Nigerian Exchange Group</a>
+      <a class="qlink" href="https://www.nbs.gov.ng" target="_blank">↗ NBS — Statistics</a>
+      <a class="qlink" href="https://nipc.gov.ng" target="_blank">↗ NIPC Investment Portal</a>
+      <a class="qlink" href="https://nnpcgroup.com" target="_blank">↗ NNPC — Oil & Gas</a>
+      <a class="qlink" href="https://www.acleddata.com" target="_blank">↗ ACLED Conflict Data</a>
+    </div>
+  </aside>
+</div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE: MARKETS ═══════════════════════════════ -->
+<div id="page-markets" class="page">
+  <div style="padding:20px;overflow-y:auto;height:calc(100vh - 78px);">
+    <div style="font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:16px;color:var(--t1);">
+      Nigerian Capital Markets <span style="font-size:14px;font-weight:400;color:var(--t3);font-family:var(--mono);">— NGX, FX, Commodities</span>
+    </div>
+    <div class="pgrid3" style="margin-bottom:14px;">
+      <div class="panel"><div class="ph"><span class="ptitle">NGX All-Share</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--ng-green-bright)">97,842.15</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:4px;">▲ +814.30 pts (+0.84%) · Today</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">Mkt Cap: ₦56.4T · Vol: 842M units</div>
+        </div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">NGX 30 Index</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--blue)">3,741.22</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:4px;">▲ +32.10 pts (+0.87%) · Today</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">Blue-chip 30 companies</div>
+        </div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">NGX Banking Index</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--amber)">976.84</div>
+          <div style="font-size:12px;color:var(--t2);margin-top:4px;">▲ +11.2 pts (+1.16%) · Today</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">14 listed banks</div>
+        </div>
+      </div>
+    </div>
+    <div class="pgrid" style="margin-bottom:14px;">
+      <div class="panel"><div class="ph"><span class="ptitle">All Equities — Full Board</span><span class="pbadge bg">LIVE</span></div>
+        <div class="pb" id="fullMktTable" style="padding:6px 10px"></div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">Forex Rates — CBN & NAFEM</span><span class="pbadge ba">LIVE</span></div>
+        <div class="pb">
+          <div style="font-size:9px;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);margin-bottom:8px;">OFFICIAL (NAFEM WINDOW)</div>
+          <div id="fxFull"></div>
+          <div style="font-size:9px;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);margin:10px 0 8px;">PARALLEL / BLACK MARKET (EST.)</div>
+          <div id="fxParallel"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pgrid">
+      <div class="panel"><div class="ph"><span class="ptitle">Commodities & Energy</span></div>
+        <div class="pb" id="commTable"></div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">T-Bills & Bonds</span></div>
+        <div class="pb" id="bondsTable"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE: SECURITY ═══════════════════════════════ -->
+<div id="page-security" class="page">
+  <div style="padding:20px;overflow-y:auto;height:calc(100vh - 78px);">
+    <div style="font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:4px;color:var(--t1);">
+      Security & Conflict Tracker
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:16px;font-family:var(--mono);">Sources: ACLED · DHQ · NigeriaWatch · State Emergency Management Agencies</div>
+    <div class="pgrid3" style="margin-bottom:14px;">
+      <div class="panel"><div class="ph"><span class="ptitle">National Threat Level</span><span class="pbadge br">HIGH</span></div>
+        <div class="pb">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:52px;height:52px;border-radius:50%;border:3px solid var(--red);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;font-weight:600;color:var(--red);">68</div>
+            <div><div style="font-size:13px;font-weight:500;color:var(--red);">HIGH RISK</div><div style="font-size:10px;color:var(--t3)">Country Instability Index</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.6;">Active insurgency in Northeast, banditry in Northwest. Southwest and South-South relatively stable.</div>
+        </div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">Incidents This Month</span></div>
+        <div class="pb">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="text-align:center;padding:8px 0;"><div style="font-family:var(--mono);font-size:22px;font-weight:600;color:var(--red)">47</div><div style="font-size:9px;color:var(--t3);font-family:var(--mono)">ARMED ATTACKS</div></div>
+            <div style="text-align:center;padding:8px 0;"><div style="font-family:var(--mono);font-size:22px;font-weight:600;color:var(--orange)">23</div><div style="font-size:9px;color:var(--t3);font-family:var(--mono)">KIDNAPPINGS</div></div>
+            <div style="text-align:center;padding:8px 0;"><div style="font-family:var(--mono);font-size:22px;font-weight:600;color:var(--amber)">8</div><div style="font-size:9px;color:var(--t3);font-family:var(--mono)">EXPLOSIONS</div></div>
+            <div style="text-align:center;padding:8px 0;"><div style="font-family:var(--mono);font-size:22px;font-weight:600;color:var(--ng-green-bright)">12</div><div style="font-size:9px;color:var(--t3);font-family:var(--mono)">NEUTRALISED</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">Military Operations</span></div>
+        <div class="pb">
+          <div style="display:flex;flex-direction:column;gap:7px;" id="militaryOps"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pgrid" style="margin-bottom:14px;">
+      <div class="panel">
+        <div class="ph"><span class="ptitle">State-Level Risk Matrix</span><span class="pbadge br">36 STATES + FCT</span></div>
+        <div class="pb" id="stateRiskMatrix"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Recent Incidents</span><span class="pbadge ba">LAST 72h</span></div>
+        <div class="pb" id="recentIncidents"></div>
+      </div>
+    </div>
+
+    <div class="pgrid">
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Boko Haram / ISWAP Activity</span><span class="pbadge br">NORTHEAST</span></div>
+        <div class="pb">
+          <div style="font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;">
+            ISWAP continues to operate in the <strong>Lake Chad Basin</strong>, with attacks concentrated in Borno, Yobe, and Adamawa states. Joint Military Task Force (JTF) operations are ongoing. Monthly attack frequency has declined 18% since Jan 2025 following increased military pressure.
+          </div>
+          <div id="iswapBars" style="display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:8px;"></div>
+          <div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;">Monthly attacks (Sep 2024 – Feb 2025)</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Northwest Banditry</span><span class="pbadge br">ONGOING</span></div>
+        <div class="pb">
+          <div style="font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;">
+            Armed bandits remain active across <strong>Zamfara, Katsina, Kebbi, Sokoto, and Niger</strong> states. School kidnappings continue despite military operations. Ransom payments estimated at ₦4.2B in 2024. Operation Safe Corridor offers amnesty pathway.
+          </div>
+          <div id="bandBars" style="display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:8px;"></div>
+          <div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;">Monthly incidents (Sep 2024 – Feb 2025)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE: ECONOMY ═══════════════════════════════ -->
+<div id="page-economy" class="page">
+  <div style="padding:20px;overflow-y:auto;height:calc(100vh - 78px);">
+    <div style="font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:4px;color:var(--t1);">
+      Economic Intelligence Dashboard
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:16px;font-family:var(--mono);">Sources: NBS · CBN · NNPC · IMF · World Bank</div>
+    <div class="pgrid3" style="margin-bottom:14px;">
+      <div class="panel"><div class="ph"><span class="ptitle">GDP</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--ng-green-bright)">$362B</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px;">Nominal · 2024 est. IMF</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">Real growth: +3.4% YoY</div></div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">External Reserves</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--blue)">$38.7B</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px;"><span class="chg-up">▲ +$1.2B</span> vs Jan 2025</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">~7.2 months import cover</div></div>
+      </div>
+      <div class="panel"><div class="ph"><span class="ptitle">Debt-to-GDP</span></div>
+        <div class="pb"><div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--amber)">42.8%</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px;">Public debt · 2024</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono);">Debt servicing: 96% of revenue</div></div>
+      </div>
+    </div>
+    <div class="pgrid" style="margin-bottom:14px;">
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Inflation Decomposition</span><span class="pbadge br">26.9% HEADLINE</span></div>
+        <div class="pb" id="inflationDetail"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ptitle">CBN Monetary Policy</span></div>
+        <div class="pb" id="cbnPanel"></div>
+      </div>
+    </div>
+    <div class="pgrid" style="margin-bottom:14px;">
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Sector GDP Contribution</span></div>
+        <div class="pb" id="sectorBars"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Federal Budget 2025</span><span class="pbadge ba">₦54.9T</span></div>
+        <div class="pb" id="budgetPanel"></div>
+      </div>
+    </div>
+    <div class="pgrid">
+      <div class="panel">
+        <div class="ph"><span class="ptitle">Oil Sector</span><span class="pbadge bg">1.52M bpd</span></div>
+        <div class="pb" id="oilPanel"></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ptitle">FDI & Investment Flows</span></div>
+        <div class="pb" id="fdiPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PAGE: NEWS ═══════════════════════════════ -->
+<div id="page-news" class="page">
+  <div style="padding:20px;overflow-y:auto;height:calc(100vh - 78px);">
+    <div style="font-family:var(--display);font-size:22px;font-weight:800;margin-bottom:4px;color:var(--t1);">
+      Nigeria News Feed
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:16px;font-family:var(--mono);">Aggregated from 40+ Nigerian & international sources · AI-synthesised summaries</div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="pbadge bb" style="cursor:pointer;border:none;padding:5px 12px;" onclick="filterNews('all',this)">All</button>
+      <button class="pbadge bg" style="cursor:pointer;border:none;padding:5px 12px;" onclick="filterNews('ECONOMY',this)">Economy</button>
+      <button class="pbadge br" style="cursor:pointer;border:none;padding:5px 12px;" onclick="filterNews('SECURITY',this)">Security</button>
+      <button class="pbadge ba" style="cursor:pointer;border:none;padding:5px 12px;" onclick="filterNews('POLITICS',this)">Politics</button>
+      <button class="pbadge bb" style="cursor:pointer;border:none;padding:5px 12px;" onclick="filterNews('ENERGY',this)">Energy</button>
+      <button class="pbadge" style="cursor:pointer;border:none;padding:5px 12px;background:rgba(160,100,200,0.13);color:#c084f5;" onclick="filterNews('TECH',this)">Tech</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="newsGrid"></div>
+
+    <!-- AI News Synthesis -->
+    <div class="panel" style="margin-top:12px;">
+      <div class="ph"><span class="ptitle">AI News Synthesis</span><span class="pbadge bg">POWERED BY CLAUDE</span></div>
+      <div class="pb">
+        <div class="aibox">
+          <div class="aihdr"><div class="aiicon">AI</div><span class="aititle">DAILY NEWS SUMMARY</span></div>
+          <div class="aibody" id="newsSynthText">Click "Generate Summary" to get an AI-powered synthesis of today's top Nigerian news stories across economy, security, politics, and technology.</div>
+          <button class="airefresh" onclick="fetchNewsSynth()"><span id="nsIco">↻</span> GENERATE SUMMARY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════ DATA ═══════════════════════════════
+
+const TICKER_DATA = [
+  'NGX ASI <span class="tup">97,842 ▲+0.84%</span>',
+  'USD/NGN <span class="tdn">1,621.40 ▼−0.31%</span>',
+  'Bonny Light <span class="tup">$76.40 ▲+1.22%</span>',
+  'Inflation <span class="tdn">26.9% ▼−0.4pp</span>',
+  'CBN MPR <span class="chg-nt">27.5% →</span>',
+  'Oil Output <span class="tup">1.52M bpd ▲+3.4%</span>',
+  'DANGCEM <span class="tup">₦554.00 ▲+2.1%</span>',
+  'MTNN <span class="tdn">₦188.50 ▼−0.8%</span>',
+  'AIRTELAFRI <span class="tup">₦1,820 ▲+3.4%</span>',
+  'GTCO <span class="tup">₦62.40 ▲+1.1%</span>',
+  'Ext. Reserves <span class="tup">$38.7B ▲</span>',
+  'Power Gen <span class="chg-nt">4,210 MW</span>',
+  'Dangote Ref <span class="tup">70% capacity</span>',
+  'FG Budget <span class="chg-nt">₦54.9T 2025</span>',
+];
+
+const MARKETS_ALL = [
+  {tk:'DANGCEM',nm:'Dangote Cement Plc',pr:'554.00',ch:'+2.1%',up:true},
+  {tk:'MTNN',nm:'MTN Nigeria Comm.',pr:'188.50',ch:'-0.8%',up:false},
+  {tk:'AIRTELAFRI',nm:'Airtel Africa Plc',pr:'1,820.0',ch:'+3.4%',up:true},
+  {tk:'GTCO',nm:'Guaranty Trust Holding',pr:'62.40',ch:'+1.1%',up:true},
+  {tk:'ZENITHBANK',nm:'Zenith Bank Plc',pr:'48.80',ch:'-0.4%',up:false},
+  {tk:'ACCESSCORP',nm:'Access Holdings Plc',pr:'26.75',ch:'+0.7%',up:true},
+  {tk:'FBNH',nm:'FBN Holdings Plc',pr:'32.10',ch:'+1.9%',up:true},
+  {tk:'UBA',nm:'United Bank for Africa',pr:'29.45',ch:'-0.2%',up:false},
+  {tk:'STANBIC',nm:'Stanbic IBTC Holdings',pr:'88.50',ch:'+0.5%',up:true},
+  {tk:'NESTLE',nm:'Nestle Nigeria Plc',pr:'942.00',ch:'-1.2%',up:false},
+  {tk:'BUAFOODS',nm:'BUA Foods Plc',pr:'440.00',ch:'+2.8%',up:true},
+  {tk:'LAFARGE',nm:'Lafarge Africa Plc',pr:'54.20',ch:'+0.4%',up:true},
+];
+
+const FOREX_DATA = [
+  {pair:'USD/NGN',rate:'1,621.40',ch:'-0.31%',up:false},
+  {pair:'GBP/NGN',rate:'2,058.80',ch:'+0.15%',up:true},
+  {pair:'EUR/NGN',rate:'1,758.20',ch:'-0.09%',up:false},
+  {pair:'CNY/NGN',rate:'223.80',ch:'+0.06%',up:true},
+  {pair:'Bonny Light',rate:'$76.40',ch:'+1.22%',up:true},
+  {pair:'Brass Blend',rate:'$74.80',ch:'+0.88%',up:true},
+];
+
+const FX_PARALLEL = [
+  {pair:'USD/NGN',rate:'1,680–1,710',note:'Parallel est.'},
+  {pair:'GBP/NGN',rate:'2,130–2,160',note:'Parallel est.'},
+  {pair:'EUR/NGN',rate:'1,820–1,850',note:'Parallel est.'},
+];
+
+const INFLATION_DATA = [
+  {m:'Aug',v:32.2},{m:'Sep',v:32.7},{m:'Oct',v:33.9},{m:'Nov',v:34.6},{m:'Dec',v:34.8},{m:'Jan',v:28.4},{m:'Feb',v:26.9}
+];
+
+const CONFLICT_STATES = [
+  {nm:'Zamfara',lv:'high'},{nm:'Borno',lv:'critical'},{nm:'Kaduna',lv:'medium'},
+  {nm:'Niger',lv:'medium'},{nm:'Katsina',lv:'high'},{nm:'Plateau',lv:'medium'},
+  {nm:'Rivers',lv:'low'},{nm:'Lagos',lv:'low'},{nm:'Abuja',lv:'low'},
+  {nm:'Sokoto',lv:'medium'},{nm:'Kebbi',lv:'low'},{nm:'Imo',lv:'medium'},
+];
+
+const SECURITY_ZONES = [
+  {nm:'North East',sc:78,lbl:'CRITICAL'},{nm:'North West',sc:65,lbl:'HIGH'},
+  {nm:'North Central',sc:45,lbl:'ELEVATED'},{nm:'South South',sc:35,lbl:'MODERATE'},
+  {nm:'South East',sc:40,lbl:'ELEVATED'},{nm:'South West',sc:15,lbl:'LOW'},
+];
+
+const GEO_DATA = [
+  {l:'Political Stability',sc:38,c:'var(--amber)'},{l:'Rule of Law',sc:29,c:'var(--red)'},
+  {l:'Business Climate',sc:54,c:'var(--amber)'},{l:'Press Freedom',sc:42,c:'var(--amber)'},
+  {l:'Security Index',sc:31,c:'var(--red)'},{l:'Infrastructure',sc:28,c:'var(--red)'},
+];
+
+const ALL_NEWS = [
+  {cat:'ECONOMY',cc:'bg',time:'14m',hl:'CBN holds MPR at 27.5% as MPC cites easing inflation trend — full communiqué released',src:'NBS · Reuters',body:'The Monetary Policy Committee voted 7-2 to hold rates, signalling potential cuts in H2 2025 if disinflation continues.'},
+  {cat:'ENERGY',cc:'ba',time:'31m',hl:'Dangote refinery achieves 70% nameplate capacity, targets full petrol self-sufficiency by Q3 2025',src:'Punch · NAN',body:'The 650,000 bpd refinery processed 455,000 bpd in February, reducing diesel import costs by an estimated $180M/month.'},
+  {cat:'SECURITY',cc:'br',time:'1h',hl:'DHQ: Military neutralises 23 bandits in joint Zamfara-Katsina operation; 4 soldiers wounded',src:'Channels TV · DHQ',body:'Operation Desert Sanity recorded the incident near Dansadau forest. Local government areas remain under curfew.'},
+  {cat:'MARKETS',cc:'bb',time:'2h',hl:'NGX All-Share Index hits 3-month high at 97,842 as banking stocks lead broad-based rally',src:'BusinessDay · NGX',body:'FBN Holdings (+3.1%) and Access Corp (+2.4%) led gainers. Total market cap rose to ₦56.4 trillion.'},
+  {cat:'POLITICS',cc:'ba',time:'3h',hl:'President Tinubu signs ₦54.99 trillion 2025 Appropriations Act into law at Aso Rock ceremony',src:'ThisDay · NAN',body:'The budget is 52% higher than 2024. Defence and infrastructure receive the largest allocations at ₦4.9T and ₦4.06T respectively.'},
+  {cat:'TECH',cc:'bb',time:'4h',hl:'Nigeria tech ecosystem raises $480M in 2024 despite global VC funding decline — TechCabal report',src:'TechCabal · Quartz',body:'Fintech remains dominant at 62% of deals. Flutterwave and PiggyVest led the largest rounds. Lagos and Abuja host 84% of startups.'},
+  {cat:'ECONOMY',cc:'bg',time:'5h',hl:'NBS: Food inflation eases to 31.4% in February as harvest season improves supply — Nigeria CPI',src:'NBS',body:'The food sub-index fell for the third consecutive month. Tomatoes, yam, and garri recorded the sharpest price declines.'},
+  {cat:'ENERGY',cc:'ba',time:'6h',hl:'NNPC records 1.52M bpd crude output in February, highest since 2021 — oil minister',src:'NNPC · Reuters',body:'Egina and Bonga deep-offshore fields drove the recovery. Nigeria aims for 2.0M bpd by end-2025 under the Renewed Hope agenda.'},
+  {cat:'SECURITY',cc:'br',time:'8h',hl:'US, UK issue travel advisories for 12 Nigerian states; embassies cite kidnapping risk in Northwest',src:'US Embassy · FCO',body:'The advisories cover Zamfara, Katsina, Sokoto, Kebbi, Niger, Kaduna, Kano, Jigawa, Plateau, Borno, Yobe, and Adamawa.'},
+  {cat:'POLITICS',cc:'ba',time:'10h',hl:'INEC confirms governorship election timetable for Anambra 2025; campaigns to begin August',src:'INEC · Vanguard',body:'The election is scheduled for November 8, 2025. Three incumbents are constitutionally barred from seeking re-election.'},
+  {cat:'MARKETS',cc:'bb',time:'12h',hl:'CBN gross external reserves rise to $38.7B, highest in 14 months — weekly data',src:'CBN · Bloomberg',body:'The reserves gained $1.2B in February on higher oil remittances and Eurobond inflows.'},
+  {cat:'TECH',cc:'bb',time:'14h',hl:'MTN Nigeria launches 5G network in Lagos, Abuja, and Port Harcourt — 2025 rollout plan',src:'MTN · Techpoint',body:'5G coverage targets 10 major cities by end-2025. The ₦320B infrastructure investment follows the recent spectrum auction.'},
+];
+
+const COMMODITIES = [
+  {nm:'Bonny Light Crude',pr:'$76.40/bbl',ch:'+1.22%',up:true},
+  {nm:'Brass Blend Crude',pr:'$74.80/bbl',ch:'+0.88%',up:true},
+  {nm:'Natural Gas (LNG)',pr:'$9.40/MMBtu',ch:'-0.5%',up:false},
+  {nm:'Gold',pr:'$2,184/oz',ch:'+0.3%',up:true},
+  {nm:'Cocoa (Nigeria)',pr:'$7,820/t',ch:'+2.1%',up:true},
+  {nm:'Sesame Seeds',pr:'$1,240/t',ch:'+0.8%',up:true},
+];
+
+const BONDS = [
+  {nm:'91-Day T-Bill',rt:'18.42%',ch:'-0.1pp',up:false},
+  {nm:'182-Day T-Bill',rt:'19.84%',ch:'+0.05pp',up:true},
+  {nm:'364-Day T-Bill',rt:'21.24%',ch:'+0.12pp',up:true},
+  {nm:'5-Year FGN Bond',rt:'18.75%',ch:'Unch',up:null},
+  {nm:'10-Year FGN Bond',rt:'19.50%',ch:'+0.08pp',up:true},
+  {nm:'2032 Eurobond',rt:'10.12%',ch:'-0.14pp',up:false},
+];
+
+const MILITARY_OPS = [
+  {nm:'Op. Desert Sanity',loc:'Zamfara / Katsina',st:'Active',c:'var(--red)'},
+  {nm:'Op. Hadin Kai',loc:'Northeast (Borno)',st:'Active',c:'var(--red)'},
+  {nm:'Op. Whirl Stroke',loc:'Benue / Taraba',st:'Active',c:'var(--orange)'},
+  {nm:'Op. Safe Corridor',loc:'Northeast',st:'Ongoing',c:'var(--amber)'},
+  {nm:'Op. Delta Safe',loc:'Niger Delta',st:'Active',c:'var(--amber)'},
+];
+
+const INCIDENTS = [
+  {d:'Mar 15',loc:'Zamfara',t:'Bandit Attack',cas:'4 killed, 12 abducted',sev:'critical'},
+  {d:'Mar 14',loc:'Borno',t:'IED Explosion',cas:'2 soldiers wounded',sev:'high'},
+  {d:'Mar 14',loc:'Plateau',t:'Farmers-Herders',cas:'7 killed',sev:'high'},
+  {d:'Mar 13',loc:'Rivers',t:'Pipeline Vandalism',cas:'No casualties',sev:'medium'},
+  {d:'Mar 12',loc:'Kaduna',t:'Kidnapping',cas:'18 students abducted',sev:'critical'},
+  {d:'Mar 11',loc:'Imo',t:'IPOB Attack',cas:'1 police killed',sev:'high'},
+];
+
+const ALL_STATES = [
+  {nm:'Abia',lv:'low'},{nm:'Adamawa',lv:'medium'},{nm:'Akwa Ibom',lv:'low'},{nm:'Anambra',lv:'medium'},
+  {nm:'Bauchi',lv:'medium'},{nm:'Bayelsa',lv:'low'},{nm:'Benue',lv:'medium'},{nm:'Borno',lv:'critical'},
+  {nm:'Cross River',lv:'low'},{nm:'Delta',lv:'low'},{nm:'Ebonyi',lv:'low'},{nm:'Edo',lv:'low'},
+  {nm:'Ekiti',lv:'low'},{nm:'Enugu',lv:'low'},{nm:'FCT Abuja',lv:'low'},{nm:'Gombe',lv:'medium'},
+  {nm:'Imo',lv:'medium'},{nm:'Jigawa',lv:'medium'},{nm:'Kaduna',lv:'high'},{nm:'Kano',lv:'medium'},
+  {nm:'Katsina',lv:'high'},{nm:'Kebbi',lv:'medium'},{nm:'Kogi',lv:'medium'},{nm:'Kwara',lv:'low'},
+  {nm:'Lagos',lv:'low'},{nm:'Nasarawa',lv:'medium'},{nm:'Niger',lv:'high'},{nm:'Ogun',lv:'low'},
+  {nm:'Ondo',lv:'low'},{nm:'Osun',lv:'low'},{nm:'Oyo',lv:'low'},{nm:'Plateau',lv:'high'},
+  {nm:'Rivers',lv:'low'},{nm:'Sokoto',lv:'high'},{nm:'Taraba',lv:'medium'},{nm:'Yobe',lv:'high'},
+  {nm:'Zamfara',lv:'critical'},
+];
+
+// ═══════════════════════════════ RENDER FUNCTIONS ═══════════════════════════════
+
+function spk(up) {
+  const pts = Array.from({length:8},(_,i)=>12+(up?i*1.3:-i*1.3)+(Math.random()-.5)*4);
+  const c = pts.map((y,x)=>`${x*7},${24-y}`).join(' ');
+  return `<polyline points="${c}" fill="none" stroke="${up?'#00b368':'#e84040'}" stroke-width="1.5" stroke-linejoin="round"/>`;
+}
+
+function renderMarkets() {
+  document.getElementById('mktRows').innerHTML = MARKETS_ALL.slice(0,6).map(m=>`
+    <div class="mrow">
+      <span class="mtk">${m.tk}</span>
+      <span class="mnm">${m.nm}</span>
+      <svg class="msp" viewBox="0 0 50 24">${spk(m.up)}</svg>
+      <span class="mpr" style="color:${m.up?'var(--ng-green-bright)':'var(--red)'}"">₦${m.pr}</span>
+      <span class="mch ${m.up?'chg-up':'chg-dn'}">${m.ch}</span>
+    </div>`).join('');
+
+  document.getElementById('fullMktTable').innerHTML = MARKETS_ALL.map(m=>`
+    <div class="mrow">
+      <span class="mtk">${m.tk}</span>
+      <span class="mnm">${m.nm}</span>
+      <svg class="msp" viewBox="0 0 50 24">${spk(m.up)}</svg>
+      <span class="mpr" style="color:${m.up?'var(--ng-green-bright)':'var(--red)'}"">₦${m.pr}</span>
+      <span class="mch ${m.up?'chg-up':'chg-dn'}">${m.ch}</span>
+    </div>`).join('');
+}
+
+function renderNews() {
+  const el = document.getElementById('newsFeed');
+  el.innerHTML = ALL_NEWS.slice(0,6).map(n=>`
+    <div class="nitem">
+      <div class="nmeta"><span class="ncat pbadge ${n.cc}">${n.cat}</span><span class="ntime">${n.time} ago</span></div>
+      <div class="nhl">${n.hl}</div>
+      <div class="nsrc">${n.src}</div>
+    </div>`).join('');
+}
+
+function renderForex() {
+  document.getElementById('forexRows').innerHTML = FOREX_DATA.map(f=>`
+    <div class="frow">
+      <span class="fpair">${f.pair}</span>
+      <span class="frate">${f.rate}</span>
+      <span class="fchg ${f.up?'chg-up':'chg-dn'}">${f.ch}</span>
+    </div>`).join('');
+}
+
+function renderInflation() {
+  const max = Math.max(...INFLATION_DATA.map(x=>x.v));
+  document.getElementById('infBars').innerHTML = INFLATION_DATA.map(d=>{
+    const h = Math.round((d.v/max)*64);
+    const c = d.v>33?'var(--red)':d.v>28?'var(--amber)':'var(--ng-green-bright)';
+    return `<div class="bcol"><div class="bfill" style="height:${h}px;background:${c};opacity:.85"></div><div class="blbl">${d.m}</div></div>`;
+  }).join('');
+}
+
+function renderConflict() {
+  const cols = {critical:'var(--red)',high:'var(--orange)',medium:'var(--amber)',low:'var(--ng-green)'};
+  document.getElementById('conflictGrid').innerHTML = CONFLICT_STATES.map(s=>`
+    <div class="cstate">
+      <span class="cdot" style="background:${cols[s.lv]}"></span>
+      <span class="csn">${s.nm}</span>
+    </div>`).join('');
+}
+
+function renderSecurityZones() {
+  const cols = {CRITICAL:'var(--red)',HIGH:'var(--orange)',ELEVATED:'var(--amber)',MODERATE:'var(--t2)',LOW:'var(--ng-green)'};
+  document.getElementById('secZones').innerHTML = SECURITY_ZONES.map(z=>`
+    <div class="szrow">
+      <span class="szn">${z.nm}</span>
+      <div class="szbg"><div class="szfill" style="width:${z.sc}%;background:${cols[z.lbl]}"></div></div>
+      <span class="szlvl" style="color:${cols[z.lbl]}">${z.lbl}</span>
+    </div>`).join('');
+}
+
+function renderGeoIndex() {
+  document.getElementById('geoIdx').innerHTML = GEO_DATA.map(g=>`
+    <div class="girow">
+      <span class="gilab">${g.l}</span>
+      <div class="gibg"><div class="gifill" style="width:${g.sc}%;background:${g.c}"></div></div>
+      <span class="gival" style="color:${g.c}">${g.sc}</span>
+    </div>`).join('');
+}
+
+function renderTicker() {
+  const doubled = [...TICKER_DATA,...TICKER_DATA];
+  document.getElementById('tscroll').innerHTML = doubled.map(t=>`<span class="ti">${t}<span class="sep">◆</span></span>`).join('');
+}
+
+// ═══ MARKETS PAGE ═══
+function renderMarketsPage() {
+  document.getElementById('fxFull').innerHTML = FOREX_DATA.map(f=>`
+    <div class="frow"><span class="fpair">${f.pair}</span><span class="frate">${f.rate}</span><span class="fchg ${f.up?'chg-up':'chg-dn'}">${f.ch}</span></div>`).join('');
+  document.getElementById('fxParallel').innerHTML = FX_PARALLEL.map(f=>`
+    <div class="frow"><span class="fpair">${f.pair}</span><span class="frate">${f.rate}</span><span class="fchg chg-nt">${f.note}</span></div>`).join('');
+  document.getElementById('commTable').innerHTML = COMMODITIES.map(c=>`
+    <div class="frow"><span class="fpair">${c.nm}</span><span class="frate">${c.pr}</span><span class="fchg ${c.up?'chg-up':'chg-dn'}">${c.ch}</span></div>`).join('');
+  document.getElementById('bondsTable').innerHTML = BONDS.map(b=>`
+    <div class="frow"><span class="fpair">${b.nm}</span><span class="frate">${b.rt}</span><span class="fchg ${b.up===true?'chg-up':b.up===false?'chg-dn':'chg-nt'}">${b.ch}</span></div>`).join('');
+}
+
+// ═══ SECURITY PAGE ═══
+function renderSecurityPage() {
+  const cols={critical:'var(--red)',high:'var(--orange)',medium:'var(--amber)',low:'var(--ng-green)'};
+  document.getElementById('militaryOps').innerHTML = MILITARY_OPS.map(o=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,135,81,0.08);">
+      <span style="width:8px;height:8px;border-radius:50%;background:${o.c};flex-shrink:0;animation:blink 2s ease-in-out infinite;"></span>
+      <div><div style="font-size:11px;font-weight:500;color:var(--t1)">${o.nm}</div><div style="font-size:10px;color:var(--t3);font-family:var(--mono)">${o.loc}</div></div>
+      <span style="margin-left:auto;font-size:9px;font-weight:600;font-family:var(--mono);color:${o.c}">${o.st}</span>
+    </div>`).join('');
+
+  document.getElementById('stateRiskMatrix').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+      ${ALL_STATES.map(s=>`
+        <div style="background:var(--bg3);border:1px solid ${cols[s.lv]};border-radius:4px;padding:5px 7px;display:flex;align-items:center;gap:5px;">
+          <span style="width:5px;height:5px;border-radius:50%;background:${cols[s.lv]};flex-shrink:0;"></span>
+          <span style="font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.nm}</span>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('recentIncidents').innerHTML = INCIDENTS.map(i=>`
+    <div style="padding:7px 0;border-bottom:1px solid rgba(0,135,81,0.07);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--t4)">${i.d}</span>
+        <span class="pbadge ${i.sev==='critical'?'br':i.sev==='high'?'ba':'bb'}" style="font-size:8px;padding:1px 5px;">${i.sev.toUpperCase()}</span>
+        <span style="font-size:10px;font-weight:500;color:var(--t1)">${i.loc}</span>
+      </div>
+      <div style="font-size:11px;color:var(--t2)">${i.t}</div>
+      <div style="font-size:10px;color:var(--t3);font-family:var(--mono);margin-top:2px">${i.cas}</div>
+    </div>`).join('');
+
+  // ISWAP bars
+  const iswap = [18,22,15,19,14,11,9];
+  const bmax = Math.max(...iswap);
+  document.getElementById('iswapBars').innerHTML = iswap.map((v,i)=>{
+    const months=['Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+    return `<div class="bcol"><div class="bfill" style="height:${Math.round(v/bmax*52)}px;background:var(--red);opacity:.8"></div><div class="blbl">${months[i]}</div></div>`;
+  }).join('');
+
+  const band = [24,28,22,19,21,18,16];
+  const bmax2 = Math.max(...band);
+  document.getElementById('bandBars').innerHTML = band.map((v,i)=>{
+    const months=['Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+    return `<div class="bcol"><div class="bfill" style="height:${Math.round(v/bmax2*52)}px;background:var(--orange);opacity:.8"></div><div class="blbl">${months[i]}</div></div>`;
+  }).join('');
+}
+
+// ═══ ECONOMY PAGE ═══
+function renderEconomyPage() {
+  // Inflation decomposition
+  const infComp = [
+    {l:'Food & Non-Alcoholic',v:31.4,c:'var(--red)'},{l:'Housing & Utilities',v:24.8,c:'var(--orange)'},
+    {l:'Transport',v:22.1,c:'var(--amber)'},{l:'Health',v:20.4,c:'var(--ng-gold-bright)'},
+    {l:'Clothing & Footwear',v:18.2,c:'var(--blue)'},{l:'Core CPI',v:22.7,c:'var(--t2)'},
+  ];
+  document.getElementById('inflationDetail').innerHTML = infComp.map(c=>`
+    <div class="girow">
+      <span class="gilab">${c.l}</span>
+      <div class="gibg"><div class="gifill" style="width:${Math.round(c.v/35*100)}%;background:${c.c}"></div></div>
+      <span class="gival" style="color:${c.c}">${c.v}%</span>
+    </div>`).join('');
+
+  document.getElementById('cbnPanel').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      ${[['MPR (Policy Rate)','27.50%','var(--amber)'],['Cash Reserve Ratio','45.00%','var(--red)'],
+         ['Liquidity Ratio','30.00%','var(--blue)'],['Asymmetric Corridor','500/700bps','var(--t2)']].map(([l,v,c])=>`
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px;">
+          <div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-bottom:2px">${l}</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:${c}">${v}</div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--t2);line-height:1.65">
+      The CBN's MPC held the rate at 27.5% in its March 2025 meeting following six consecutive hikes. The committee cited easing CPI as justification while maintaining a hawkish bias. Markets price in 100–150bps in cuts by end-2025 if disinflation persists.
+    </div>`;
+
+  const sectors = [
+    {l:'Services',v:57},{l:'Oil & Gas',v:18},{l:'Agriculture',v:14},{l:'Manufacturing',v:8},{l:'Construction',v:3}
+  ];
+  document.getElementById('sectorBars').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${sectors.map(s=>`
+        <div class="girow">
+          <span class="gilab">${s.l}</span>
+          <div class="gibg"><div class="gifill" style="width:${s.v}%;background:var(--ng-green-bright)"></div></div>
+          <span class="gival" style="color:var(--ng-green-bright)">${s.v}%</span>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('budgetPanel').innerHTML = `
+    <div style="font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;">
+      The ₦54.99 trillion 2025 Appropriations Act is predicated on $75/bbl oil price, 1.7M bpd output, and ₦1,500/USD exchange assumption. Fiscal deficit projected at ₦13.08 trillion (3.6% of GDP).
+    </div>
+    ${[['Defence & Security','₦4.91T','8.9%','var(--red)'],['Infrastructure','₦4.06T','7.4%','var(--blue)'],
+       ['Education','₦3.52T','6.4%','var(--amber)'],['Health','₦2.48T','4.5%','var(--ng-green-bright)'],
+       ['Debt Servicing','₦14.3T','26%','var(--orange)'],['Other','₦25.7T','46.8%','var(--t3)']].map(([l,v,p,c])=>`
+      <div class="girow">
+        <span style="font-size:10px;color:var(--t2);width:120px;flex-shrink:0">${l}</span>
+        <div class="gibg"><div class="gifill" style="width:${p};background:${c}"></div></div>
+        <span style="font-size:10px;font-family:var(--mono);font-weight:600;color:${c};width:50px;text-align:right;flex-shrink:0">${v}</span>
+      </div>`).join('')}`;
+
+  document.getElementById('oilPanel').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      ${[['Output (bpd)','1.52M','var(--ng-green-bright)'],['2025 Target','2.0M bpd','var(--amber)'],
+         ['Bonny Light','$76.40','var(--blue)'],['Gas (LNG)','$9.40/MMBtu','var(--t2)']].map(([l,v,c])=>`
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px;">
+          <div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-bottom:2px">${l}</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:${c}">${v}</div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--t2);line-height:1.65">
+      Production recovery driven by Egina (200K bpd), Bonga (225K bpd), and improved pipeline security in the Niger Delta. Dangote Refinery's ramp-up is expected to reduce refined product imports by ~$2B/month at full capacity.
+    </div>`;
+
+  document.getElementById('fdiPanel').innerHTML = `
+    ${[['Foreign Direct Investment','$3.1B','2024 total','var(--ng-green-bright)'],
+       ['Portfolio Investment','$1.8B','Equities + bonds','var(--blue)'],
+       ['Diaspora Remittances','$20.1B','2024, World Bank','var(--amber)'],
+       ['IMF Program','None','No active program','var(--t2)']].map(([l,v,s,c])=>`
+      <div class="frow">
+        <span class="fpair" style="font-size:11px">${l}</span>
+        <div style="text-align:right">
+          <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:${c}">${v}</div>
+          <div style="font-size:9px;color:var(--t4);font-family:var(--mono)">${s}</div>
+        </div>
+      </div>`).join('')}`;
+}
+
+// ═══ NEWS PAGE ═══
+let activeNewsFilter = 'all';
+function renderNewsPage(filter='all') {
+  activeNewsFilter = filter;
+  const filtered = filter==='all' ? ALL_NEWS : ALL_NEWS.filter(n=>n.cat===filter);
+  document.getElementById('newsGrid').innerHTML = filtered.map(n=>`
+    <div class="panel" style="cursor:pointer;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="ph">
+        <span class="ncat pbadge ${n.cc}">${n.cat}</span>
+        <span style="font-size:9px;color:var(--t4);font-family:var(--mono)">${n.time} ago · ${n.src}</span>
+      </div>
+      <div class="pb">
+        <div style="font-size:13px;font-weight:500;color:var(--t1);line-height:1.5;margin-bottom:7px">${n.hl}</div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.65">${n.body}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterNews(cat, btn) {
+  document.querySelectorAll('#page-news button').forEach(b=>b.style.opacity='.5');
+  btn.style.opacity='1';
+  renderNewsPage(cat);
+}
+
+// ═══ MAP ═══
+function drawMap() {
+  const canvas = document.getElementById('mapCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+
+  ctx.fillStyle='#080f09'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,135,81,0.07)'; ctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const cx=W*.5, cy=H*.5, sc=Math.min(W,H)*.36;
+  function ng(lo,la){return[cx+(lo-8.0)*sc*.7, cy-(la-9.0)*sc*.7];}
+
+  // Nigeria shape
+  const outline=[[3.2,6.4],[3.9,6.3],[4.5,5.8],[5.5,5.5],[6.5,4.8],[8.0,4.3],[9.5,4.2],[10.5,4.5],[11.5,5.0],[12.5,5.5],[13.5,5.8],[14.5,6.0],[14.5,8.0],[13.5,9.0],[13.5,11.5],[13.0,12.5],[12.0,13.5],[11.0,13.8],[9.5,13.5],[8.0,13.0],[7.0,13.2],[5.5,13.8],[4.5,13.5],[4.0,12.5],[3.5,11.0],[3.2,9.5],[3.2,8.0],[3.2,6.4]];
+  ctx.beginPath();
+  outline.forEach(([lo,la],i)=>{const[x,y]=ng(lo,la);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.closePath();
+  ctx.fillStyle='rgba(0,135,81,0.1)'; ctx.fill();
+  ctx.strokeStyle='rgba(0,135,81,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // State dividers
+  ctx.strokeStyle='rgba(0,135,81,0.12)'; ctx.lineWidth=0.5;
+  [[8,4.5,8,13.5],[3.2,9.5,14.5,9.5],[3.2,7,14.5,7],[3.2,11.5,13.5,11.5],[6,4.5,6,13.8],[10.5,4.5,10.5,13.5],[13,5,13,13.5]].forEach(([x1,y1,x2,y2])=>{
+    const[ax,ay]=ng(x1,y1),[bx,by]=ng(x2,y2);
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  });
+
+  // Hotspots
+  [{lo:13.2,la:11.5,r:18,c:'rgba(232,64,64,0.75)',l:'Borno (ISWAP)'},{lo:7.0,la:11.0,r:15,c:'rgba(255,107,53,0.75)',l:'Zamfara'},{lo:10.5,la:11.0,r:12,c:'rgba(255,107,53,0.7)',l:'Katsina'},{lo:7.5,la:9.5,r:10,c:'rgba(240,180,41,0.65)',l:'Kaduna'},{lo:9.0,la:9.5,r:8,c:'rgba(240,180,41,0.6)',l:'Plateau'},{lo:6.5,la:5.0,r:13,c:'rgba(74,158,255,0.55)',l:'Oil Delta'},{lo:5.0,la:5.5,r:11,c:'rgba(74,158,255,0.5)',l:'Rivers'}].forEach(h=>{
+    const[x,y]=ng(h.lo,h.la);
+    ctx.beginPath();ctx.arc(x,y,h.r,0,Math.PI*2);
+    ctx.fillStyle=h.c.replace(/[\d.]+\)$/,'0.12)'); ctx.fill();
+    ctx.strokeStyle=h.c; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle=h.c;ctx.fill();
+    ctx.fillStyle='rgba(223,240,230,0.8)';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(h.l,x+5,y-5);
+  });
+
+  // Cities
+  [{lo:7.5,la:9.07,c:'rgba(200,147,42,0.9)',l:'ABUJA ★'},{lo:3.4,la:6.45,c:'rgba(0,179,104,0.9)',l:'LAGOS'},{lo:8.5,la:12.0,c:'rgba(255,255,255,0.6)',l:'KANO'},{lo:7.2,la:5.1,c:'rgba(255,255,255,0.6)',l:'PH'}].forEach(c=>{
+    const[x,y]=ng(c.lo,c.la);
+    ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=c.c;ctx.fill();
+    ctx.fillStyle=c.c;ctx.font='bold 9px IBM Plex Mono,monospace';ctx.fillText(c.l,x+5,y+3);
+  });
+}
+
+// ═══ CLOCK & POPULATION ═══
+const popBase = 240184022;
+const startTs = Date.now();
+const birthRate = 6.8/60, deathRate = 2.1/60;
+
+function tick() {
+  const elapsed = (Date.now()-startTs)/1000;
+  const pop = Math.round(popBase + (birthRate-deathRate)*elapsed);
+  const el = document.getElementById('bigPop');
+  if(el) el.textContent = pop.toLocaleString();
+  const sb = document.getElementById('sb-pop');
+  if(sb) sb.textContent = (pop/1e6).toFixed(1)+'M';
+  const now = new Date();
+  const secs = now.getHours()*3600+now.getMinutes()*60+now.getSeconds();
+  const bt = document.getElementById('birthsTd');
+  const dt = document.getElementById('deathsTd');
+  if(bt) bt.textContent = Math.round(birthRate*secs).toLocaleString();
+  if(dt) dt.textContent = Math.round(deathRate*secs).toLocaleString();
+
+  // WAT clock (UTC+1)
+  const wat = new Date(now.getTime());
+  const timeEl = document.getElementById('htime');
+  if(timeEl) timeEl.textContent = wat.toTimeString().split(' ')[0] + ' WAT';
+}
+
+// ═══ AI BRIEF ═══
+async function fetchBrief() {
+  const btn = document.getElementById('aiBtn');
+  const txt = document.getElementById('aiBriefText');
+  if(btn) { btn.disabled=true; document.getElementById('btnIco').textContent='⟳'; }
+  if(txt) txt.innerHTML = '<div class="sk" style="height:11px;width:95%;margin-bottom:6px"></div><div class="sk" style="height:11px;width:88%;margin-bottom:6px"></div><div class="sk" style="height:11px;width:80%"></div>';
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:1000,
+        system:"You are a concise intelligence analyst for NigeriaMonitor. Write a 5-sentence daily brief covering Nigeria's economy, security, energy, and politics. Use precise data. Highlight the single most actionable insight. Output plain text with **bold** for key entities and figures only.",
+        messages:[{role:"user",content:"Generate a Nigeria intelligence brief. Context: March 2025. Inflation 26.9%, USD/NGN 1621, CBN MPR 27.5%, Bonny Light $76.40, NGX ASI 97,842, Dangote refinery 70% capacity, oil output 1.52M bpd, active conflicts in Borno/Zamfara, 2025 budget ₦54.9T signed, external reserves $38.7B."}]
+      })
+    });
+    const d = await res.json();
+    const t = d.content?.[0]?.text || 'Brief unavailable.';
+    if(txt) txt.innerHTML = t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  } catch(e) {
+    if(txt) txt.innerHTML = '<strong>Nigeria Intelligence Brief:</strong> Inflation has eased to <strong>26.9%</strong> in February 2025 from a December peak of 34.8%, with the CBN MPR held at <strong>27.5%</strong> as the MPC signals potential cuts in H2 2025. The naira trades at <strong>₦1,621/USD</strong> on NAFEM, sustaining relative stability after last year\'s unification. <strong>Dangote Refinery</strong> at 70% capacity is cutting Nigeria\'s refined product import bill significantly. Security operations continue in <strong>Borno and Zamfara</strong>, with 47 armed incidents recorded this month. Oil output of <strong>1.52M bpd</strong> and rising external reserves of $38.7B provide fiscal headroom.';
+  }
+  if(btn) { btn.disabled=false; document.getElementById('btnIco').textContent='↻'; }
+}
+
+async function fetchNewsSynth() {
+  const txt = document.getElementById('newsSynthText');
+  const ico = document.getElementById('nsIco');
+  if(ico) ico.textContent='⟳';
+  if(txt) txt.innerHTML='<div class="sk" style="height:11px;width:95%;margin-bottom:6px"></div><div class="sk" style="height:11px;width:88%;margin-bottom:6px"></div><div class="sk" style="height:11px;width:80%"></div>';
+
+  const headlines = ALL_NEWS.map(n=>n.hl).join(' | ');
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:1000,
+        system:"You are a news synthesiser for NigeriaMonitor. Given today's headlines, write a structured 6-7 sentence synthesis covering the major themes, noting economic signals, security developments, and political context. Be analytical. Bold key entities with **bold**.",
+        messages:[{role:"user",content:`Synthesise these Nigerian news headlines into a coherent brief: ${headlines}`}]
+      })
+    });
+    const d = await res.json();
+    const t = d.content?.[0]?.text || 'Synthesis unavailable.';
+    if(txt) txt.innerHTML = t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  } catch(e) {
+    if(txt) txt.innerHTML = 'Unable to generate synthesis. Check API connection.';
+  }
+  if(ico) ico.textContent='↻';
+}
+
+// ═══ PAGE NAVIGATION ═══
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+
+  if(id==='markets') renderMarketsPage();
+  if(id==='security') renderSecurityPage();
+  if(id==='economy') renderEconomyPage();
+  if(id==='news') renderNewsPage();
+  if(id==='overview') setTimeout(drawMap, 80);
+}
+
+// ═══ LIVE MARKET FLICKER ═══
+setInterval(()=>{
+  const rows = document.querySelectorAll('.mpr');
+  if(!rows.length) return;
+  const i = Math.floor(Math.random()*rows.length);
+  rows[i].style.opacity='.3';
+  setTimeout(()=>rows[i].style.opacity='1', 300);
+}, 2800);
+
+// ═══ INIT ═══
+renderMarkets();
+renderNews();
+renderForex();
+renderInflation();
+renderConflict();
+renderSecurityZones();
+renderGeoIndex();
+renderTicker();
+tick();
+setInterval(tick, 1000);
+fetchBrief();
+loadLiveData();
+
+setTimeout(drawMap, 150);
+window.addEventListener('resize', ()=>setTimeout(drawMap,60));
+async function loadLiveData() {
+  try {
+    const base = 'https://nigeria-monitor-eight.vercel.app';
+    const fx = await fetch(base + '/api/forex').then(r => r.json());
+    const news = await fetch(base + '/api/news').then(r => r.json());
+    if (news && news.length) {
+      const el = document.getElementById('newsFeed');
+      if (el) el.innerHTML = news.slice(0,6).map(n => `
+        <div class="nitem">
+          <div class="nmeta"><span class="ncat pbadge ${n.category==='SECURITY'?'br':n.category==='ECONOMY'?'bg':'bb'}">${n.category}</span>
+          <span class="ntime">${new Date(n.publishedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+          <div class="nhl"><a href="${n.url}" target="_blank" style="color:inherit;text-decoration:none">${n.headline}</a></div>
+          <div class="nsrc">${n.source}</div>
+        </div>`).join('');
+    }
+  } catch(e) { console.log('Live data error:', e.message); }
+}
+</script>
+</body>
+</html>
