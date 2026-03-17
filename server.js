@@ -7,10 +7,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-app.get('/', (req, res) => {
-  res.json({ status: 'NigeriaMonitor proxy running', time: new Date().toISOString() });
-});
-
 app.get('/api/forex', async (req, res) => {
   try {
     const fetch = require('node-fetch');
@@ -74,4 +70,4 @@ function inferCategory(text) {
 }
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`NigeriaMonitor proxy running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`NigeriaMonitor running on http://localhost:${PORT}`));
